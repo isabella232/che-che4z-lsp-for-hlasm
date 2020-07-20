@@ -18,6 +18,7 @@
 #include "cached_statement.h"
 #include "id_storage.h"
 #include "range.h"
+#include "workspaces/file_cache_context.h"
 
 namespace hlasm_plugin {
 namespace parser_library {
@@ -39,9 +40,13 @@ struct copy_member_invocation
     {}
 };
 
+class copy_member;
+using copy_mem_ptr = std::shared_ptr<copy_member>;
+
 // structure represents COPY member in HLASM macro library
-struct copy_member
+class copy_member : public workspaces::file_cache_context
 {
+public:
     // member idenifier
     const id_index name;
     // block of statements defining the member

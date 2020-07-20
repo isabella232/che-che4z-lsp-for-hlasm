@@ -22,6 +22,7 @@
 #include "common_types.h"
 #include "sequence_symbol.h"
 #include "variables/macro_param.h"
+#include "workspaces/file_cache_context.h"
 
 namespace hlasm_plugin {
 namespace parser_library {
@@ -54,7 +55,7 @@ using copy_nest_storage = std::vector<std::vector<location>>;
 // contains info about keyword, positional parameters of HLASM mascro as well as derivation tree of the actual code
 // has methods call to represent macro instruction call
 // serves as prototype for creating macro_invocation objects
-class macro_definition
+class macro_definition : public workspaces::file_cache_context
 {
     using macro_param_ptr = std::shared_ptr<macro_param_base>;
 

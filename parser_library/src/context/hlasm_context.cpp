@@ -652,7 +652,7 @@ const std::set<std::string>& hlasm_context::get_visited_files() { return visited
 
 void hlasm_context::add_copy_member(id_index member, statement_block definition, location definition_location)
 {
-    copy_members_.try_emplace(member, member, std::move(definition), definition_location);
+    copy_members_.try_emplace(member, std::make_shared<copy_member>(member, std::move(definition), definition_location));
     visited_files_.insert(std::move(definition_location.file));
 }
 
@@ -664,7 +664,7 @@ void hlasm_context::enter_copy_member(id_index member_name)
 
     auto& [name, member] = *tmp;
 
-    source_stack_.back().copy_stack.emplace_back(member.enter());
+    source_stack_.back().copy_stack.emplace_back(member->enter());
 }
 
 const hlasm_context::copy_member_storage& hlasm_context::copy_members() { return copy_members_; }
@@ -684,7 +684,7 @@ void hlasm_context::apply_source_snapshot(source_snapshot snapshot)
 
     for (auto& frame : snapshot.copy_frames)
     {
-        auto invo = copy_members_.at(frame.copy_member).enter();
+        auto invo = copy_members_.at(frame.copy_member)->enter();
         invo.current_statement = (int)frame.statement_offset;
         source_stack_.back().copy_stack.push_back(std::move(invo));
     }
