@@ -55,6 +55,7 @@ private:
     std::unique_ptr<analyzer> analyzer_;
 
     bool parse_inner(analyzer&);
+    bool parse_inner_cached();
 
     bool parse_info_updated_ = false;
     size_t parsed_version_ = (size_t)-1;

@@ -70,6 +70,9 @@ parse_result processor_file_impl::parse(parse_lib_provider& lib_provider)
 parse_result processor_file_impl::parse_macro(
     parse_lib_provider& lib_provider, context::hlasm_context& hlasm_ctx, const library_data data)
 {
+    if (get_version() == parsed_version_)
+        return parse_inner_cached();
+
     analyzer_ =
         std::make_unique<analyzer>(get_text(), get_file_name(), hlasm_ctx, lib_provider, data, get_lsp_editing());
 
@@ -115,8 +118,33 @@ bool processor_file_impl::parse_inner(analyzer& new_analyzer)
         parse_info_updated_ = true;
 
     if (cancel_ && *cancel_)
+    {
+        parsed_version_ = (size_t)-1;
         return false;
-    return true;
+    }
+    else
+    {
+        parsed_version_ = get_version();
+        return true;
+    }
+}
+
+bool processor_file_impl::parse_inner_cached()
+{
+    // collect semantic info if the file is open in IDE
+    if (get_lsp_editing())
+        parse_info_updated_ = true;
+
+    if (cancel_ && *cancel_)
+    {
+        parsed_version_ = (size_t)-1;
+        return false;
+    }
+    else
+    {
+        parsed_version_ = get_version();
+        return true;
+    }
 }
 
 } // namespace hlasm_plugin::parser_library::workspaces
