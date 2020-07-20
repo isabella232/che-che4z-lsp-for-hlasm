@@ -90,7 +90,7 @@ const ws_uri& workspace::uri() { return uri_; }
 void workspace::parse_file(const std::string& file_uri)
 {
     std::filesystem::path file_path(file_uri);
-    // add support for hlasm to vscode (auto detection??) and do the decision based on languageid
+    // TODO add support for hlasm to vscode (auto detection??) and do the decision based on languageid
     if (file_path == proc_grps_path_ || file_path == pgm_conf_path_)
     {
         if (load_config())
@@ -112,7 +112,7 @@ void workspace::parse_file(const std::string& file_uri)
 
         return;
     }
-    // what about removing files??? what if depentands_ points to not existing file?
+    // TODO what about removing files??? what if depentands_ points to not existing file?
     std::vector<processor_file_ptr> files_to_parse;
 
     for (auto fname : dependants_)

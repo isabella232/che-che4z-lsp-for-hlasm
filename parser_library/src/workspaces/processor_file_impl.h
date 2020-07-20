@@ -57,6 +57,7 @@ private:
     bool parse_inner(analyzer&);
 
     bool parse_info_updated_ = false;
+    size_t parsed_version_ = (size_t)-1;
     std::atomic<bool>* cancel_;
 
     std::set<std::string> dependencies_;
