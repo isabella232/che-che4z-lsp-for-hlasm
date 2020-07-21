@@ -41,11 +41,19 @@ bool processor_file_impl::is_once_only() const { return false; }
 
 parse_result processor_file_impl::parse(parse_lib_provider& lib_provider)
 {
-    analyzer_ = std::make_unique<analyzer>(get_text(), get_file_name(), lib_provider, nullptr, get_lsp_editing());
+    if (analyzer_)
+        analyzer_ = std::make_unique<analyzer>(get_text(),
+            get_file_name(),
+            lib_provider,
+            nullptr,
+            get_lsp_editing(),
+            std::move(analyzer_->context().ids()));
+    else
+        analyzer_ = std::make_unique<analyzer>(get_text(), get_file_name(), lib_provider, nullptr, get_lsp_editing());
 
     auto old_dep = dependencies_;
 
-    auto res = parse_inner(*analyzer_);
+    auto res = parse_inner(*analyzer_, library_data());
 
     if (!cancel_ || !*cancel_)
     {
@@ -71,12 +79,12 @@ parse_result processor_file_impl::parse_macro(
     parse_lib_provider& lib_provider, context::hlasm_context& hlasm_ctx, const library_data data)
 {
     if (get_version() == parsed_version_)
-        return parse_inner_cached();
+        return parse_inner_cached(hlasm_ctx, data);
 
     analyzer_ =
         std::make_unique<analyzer>(get_text(), get_file_name(), hlasm_ctx, lib_provider, data, get_lsp_editing());
 
-    return parse_inner(*analyzer_);
+    return parse_inner(*analyzer_, data);
 }
 
 parse_result processor_file_impl::parse_no_lsp_update(
@@ -105,7 +113,7 @@ const std::set<std::string>& processor_file_impl::files_to_close() { return file
 
 const performance_metrics& processor_file_impl::get_metrics() { return analyzer_->get_metrics(); }
 
-bool processor_file_impl::parse_inner(analyzer& new_analyzer)
+bool processor_file_impl::parse_inner(analyzer& new_analyzer, const library_data& data)
 {
     diags().clear();
 
@@ -118,32 +126,62 @@ bool processor_file_impl::parse_inner(analyzer& new_analyzer)
         parse_info_updated_ = true;
 
     if (cancel_ && *cancel_)
-    {
-        parsed_version_ = (size_t)-1;
         return false;
-    }
-    else
-    {
+
+    if (retrieve_file_ctx(new_analyzer, data))
         parsed_version_ = get_version();
-        return true;
-    }
+
+    return true;
 }
 
-bool processor_file_impl::parse_inner_cached()
+bool processor_file_impl::parse_inner_cached(context::hlasm_context& hlasm_ctx, const library_data& data)
 {
     // collect semantic info if the file is open in IDE
     if (get_lsp_editing())
         parse_info_updated_ = true;
 
     if (cancel_ && *cancel_)
-    {
-        parsed_version_ = (size_t)-1;
         return false;
-    }
-    else
+
+    apply_file_ctx(hlasm_ctx, data);
+    return true;
+}
+
+bool processor_file_impl::retrieve_file_ctx(analyzer& parsed, const library_data& lib_data)
+{
+    if (lib_data.proc_kind == processing::processing_kind::MACRO)
     {
-        parsed_version_ = get_version();
-        return true;
+        if (auto it = parsed.context().macros().find(lib_data.library_member); it != parsed.context().macros().end())
+        {
+            cached_file_ctx_ = it->second;
+            return true;
+        }
+    }
+    else if (lib_data.proc_kind == processing::processing_kind::COPY)
+    {
+        if (auto it = parsed.context().copy_members().find(lib_data.library_member);
+            it != parsed.context().copy_members().end())
+        {
+            cached_file_ctx_ = it->second;
+            return true;
+        }
+    }
+    return false;
+}
+
+void processor_file_impl::apply_file_ctx(context::hlasm_context& hlasm_ctx, const library_data& lib_data)
+{
+    if (lib_data.proc_kind == processing::processing_kind::MACRO)
+    {
+        context::macro_def_ptr that = std::dynamic_pointer_cast<context::macro_definition>(cached_file_ctx_);
+        const_cast<context::id_index>(that->id) = lib_data.library_member;
+        hlasm_ctx.add_macro(that);
+    }
+    else if (lib_data.proc_kind == processing::processing_kind::COPY)
+    {
+        auto that = std::dynamic_pointer_cast<context::copy_member>(cached_file_ctx_);
+        const_cast<context::id_index>(that->name) = lib_data.library_member;
+        hlasm_ctx.add_copy_member(std::dynamic_pointer_cast<context::copy_member>(cached_file_ctx_));
     }
 }
 

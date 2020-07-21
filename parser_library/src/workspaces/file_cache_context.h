@@ -21,7 +21,10 @@ namespace hlasm_plugin::parser_library::workspaces {
 
 // abstract class that represent a file context that can be cached between parsings
 class file_cache_context
-{};
+{
+public:
+    virtual ~file_cache_context() = default;
+};
 
 using file_cache_ctx_ptr = std::shared_ptr<file_cache_context>;
 

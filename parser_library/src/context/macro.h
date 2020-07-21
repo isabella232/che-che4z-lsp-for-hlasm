@@ -66,7 +66,7 @@ class macro_definition : public workspaces::file_cache_context
 
 public:
     // identifier of macro
-    const id_index id;
+    id_index id;
     // params of macro
     const std::unordered_map<id_index, const macro_param_base*>& named_params() const;
     // vector of statements representing macro definition

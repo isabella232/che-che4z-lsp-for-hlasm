@@ -48,7 +48,7 @@ class copy_member : public workspaces::file_cache_context
 {
 public:
     // member idenifier
-    const id_index name;
+    id_index name;
     // block of statements defining the member
     cached_block cached_definition;
     // location of the definition

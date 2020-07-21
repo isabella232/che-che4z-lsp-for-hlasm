@@ -55,7 +55,8 @@ public:
         std::string file_name = "",
         workspaces::parse_lib_provider& lib_provider = workspaces::empty_parse_lib_provider::instance,
         processing::processing_tracer* tracer = nullptr,
-        bool collect_hl_info = false);
+        bool collect_hl_info = false,
+        context::id_storage ids = context::id_storage());
 
     context::hlasm_context& context();
     parsing::hlasmparser& parser();

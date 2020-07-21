@@ -39,6 +39,11 @@ public:
     // represents value of empty identifier
     static const const_pointer empty_id;
 
+    id_storage(id_storage&& ids)
+        : lit_(std::move(ids.lit_))
+        , well_known(lit_)
+    {}
+
     size_t size() const;
     const_iterator begin() const;
     const_iterator end() const;

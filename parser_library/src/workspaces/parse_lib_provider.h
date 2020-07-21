@@ -25,6 +25,16 @@ struct library_data
 {
     processing::processing_kind proc_kind;
     context::id_index library_member;
+
+    library_data()
+        : proc_kind(processing::processing_kind::ORDINARY)
+        , library_member(context::id_storage::empty_id)
+    {}
+
+    library_data(processing::processing_kind proc_kind, context::id_index library_member)
+        : proc_kind(proc_kind)
+        , library_member(library_member)
+    {}
 };
 // Interface that the analyzer uses to parse macros and COPY files in separate files (libraries).
 class parse_lib_provider

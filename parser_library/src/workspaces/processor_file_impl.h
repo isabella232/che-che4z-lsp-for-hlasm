@@ -16,6 +16,7 @@
 #define HLASMPLUGIN_PARSERLIBRARY_PROCESSOR_FILE_H
 
 #include "analyzer.h"
+#include "file_cache_context.h"
 #include "file_impl.h"
 #include "processor.h"
 
@@ -54,8 +55,13 @@ public:
 private:
     std::unique_ptr<analyzer> analyzer_;
 
-    bool parse_inner(analyzer&);
-    bool parse_inner_cached();
+    bool parse_inner(analyzer&, const library_data&);
+    bool parse_inner_cached(context::hlasm_context&, const library_data&);
+
+    file_cache_ctx_ptr cached_file_ctx_;
+
+    bool retrieve_file_ctx(analyzer& parsed, const library_data& lib_data);
+    void apply_file_ctx(context::hlasm_context&, const library_data& lib_data);
 
     bool parse_info_updated_ = false;
     size_t parsed_version_ = (size_t)-1;

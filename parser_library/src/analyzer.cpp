@@ -66,12 +66,12 @@ analyzer::analyzer(const std::string& text,
     std::string file_name,
     parse_lib_provider& lib_provider,
     processing::processing_tracer* tracer,
-    bool collect_hl_info)
+    bool collect_hl_info, context::id_storage ids)
     : analyzer(text,
         file_name,
         lib_provider,
-        new context::hlasm_context(file_name),
-        library_data { processing::processing_kind::ORDINARY, context::id_storage::empty_id },
+        new context::hlasm_context(file_name, std::move(ids)),
+        library_data(),
         true,
         tracer,
         collect_hl_info)

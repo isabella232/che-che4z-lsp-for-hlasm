@@ -253,6 +253,19 @@ hlasm_context::hlasm_context(std::string file_name)
     add_global_system_vars();
 }
 
+hlasm_context::hlasm_context(std::string file_name, id_storage ids)
+    : ids_(std::move(ids))
+    , instruction_map_(init_instruction_map())
+    , SYSNDX_(0)
+    , ord_ctx(ids_)
+    , lsp_ctx(std::make_shared<lsp_context>())
+{
+    scope_stack_.emplace_back();
+    visited_files_.insert(file_name);
+    push_statement_processing(processing::processing_kind::ORDINARY, std::move(file_name));
+    add_global_system_vars();
+}
+
 void hlasm_context::set_source_position(position pos) { source_stack_.back().current_instruction.pos = pos; }
 
 void hlasm_context::set_source_indices(size_t begin_index, size_t end_index, size_t end_line)
@@ -603,6 +616,11 @@ const macro_definition& hlasm_context::add_macro(id_index name,
                 .first->second.get();
 }
 
+void hlasm_context::add_macro(macro_def_ptr macro_def)
+{
+    macros_.insert_or_assign(macro_def->id, std::move(macro_def));
+}
+
 const hlasm_context::macro_storage& hlasm_context::macros() const { return macros_; }
 
 const macro_def_ptr hlasm_context::get_macro_definition(id_index name) const
@@ -652,8 +670,15 @@ const std::set<std::string>& hlasm_context::get_visited_files() { return visited
 
 void hlasm_context::add_copy_member(id_index member, statement_block definition, location definition_location)
 {
-    copy_members_.try_emplace(member, std::make_shared<copy_member>(member, std::move(definition), definition_location));
+    copy_members_.try_emplace(
+        member, std::make_shared<copy_member>(member, std::move(definition), definition_location));
     visited_files_.insert(std::move(definition_location.file));
+}
+
+void hlasm_context::add_copy_member(copy_mem_ptr copy_mem)
+{
+    copy_members_.try_emplace(copy_mem->name, copy_mem);
+    visited_files_.insert(copy_mem->definition_location.file);
 }
 
 void hlasm_context::enter_copy_member(id_index member_name)

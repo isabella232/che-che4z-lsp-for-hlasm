@@ -80,6 +80,7 @@ class hlasm_context
 
 public:
     hlasm_context(std::string file_name = "");
+    hlasm_context(std::string file_name, id_storage ids);
 
     // gets name of file where is open-code located
     const std::string& opencode_file_name() const;
@@ -176,6 +177,7 @@ public:
         copy_nest_storage copy_nests,
         label_storage labels,
         location definition_location);
+    void add_macro(macro_def_ptr macro_def);
     // enters a macro with actual params
     macro_invo_ptr enter_macro(id_index name, macro_data_ptr label_param_data, std::vector<macro_arg> params);
     // leaves current macro
@@ -185,6 +187,7 @@ public:
     const copy_member_storage& copy_members();
     // registers new copy member
     void add_copy_member(id_index member, statement_block definition, location definition_location);
+    void add_copy_member(copy_mem_ptr copy_mem);
     // enters a copy member
     void enter_copy_member(id_index member);
     // leaves current copy member
