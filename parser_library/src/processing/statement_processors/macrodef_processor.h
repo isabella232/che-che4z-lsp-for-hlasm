@@ -50,7 +50,6 @@ public:
         macrodef_start_data start);
 
     virtual processing_status get_processing_status(const semantics::instruction_si& instruction) const override;
-    virtual void process_statement(context::unique_stmt_ptr statement) override;
     virtual void process_statement(context::shared_stmt_ptr statement) override;
     virtual void end_processing() override;
     virtual bool terminal_condition(const statement_provider_kind kind) const override;
@@ -65,9 +64,11 @@ private:
     void process_statement(const context::hlasm_statement& statement);
 
     void process_prototype(const resolved_statement& statement);
-    void process_prototype_label(const resolved_statement& statement, std::vector<context::id_index>& param_names);
+    void process_prototype_label(
+        const resolved_statement& statement, std::vector<context::id_index>& param_names);
     void process_prototype_instruction(const resolved_statement& statement);
-    void process_prototype_operand(const resolved_statement& statement, std::vector<context::id_index>& param_names);
+    void process_prototype_operand(
+        const resolved_statement& statement, std::vector<context::id_index>& param_names);
 
     bool test_varsym_validity(const semantics::variable_symbol* var,
         const std::vector<context::id_index>& param_names,

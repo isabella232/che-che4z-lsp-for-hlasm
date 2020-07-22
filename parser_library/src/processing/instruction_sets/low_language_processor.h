@@ -39,7 +39,6 @@ protected:
         workspaces::parse_lib_provider& lib_provider,
         statement_fields_parser& parser);
 
-    rebuilt_statement preprocess(context::unique_stmt_ptr stmt);
     rebuilt_statement preprocess(context::shared_stmt_ptr stmt);
 
     // adds dependency and also check for cyclic dependency and adds diagnostics if so
@@ -69,7 +68,7 @@ protected:
 
 private:
     using preprocessed_part = std::pair<std::optional<semantics::label_si>, std::optional<semantics::operands_si>>;
-    preprocessed_part preprocess_inner(const resolved_statement_impl& stmt);
+    preprocessed_part preprocess_inner(const resolved_statement& stmt);
 
     // check for newly added loctr dependencies
     void check_loctr_dependencies(range err_range);

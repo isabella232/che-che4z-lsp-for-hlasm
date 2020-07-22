@@ -44,9 +44,29 @@ processing_status lookahead_processor::get_processing_status(const semantics::in
     return std::make_pair(processing_format(processing_kind::LOOKAHEAD, processing_form::IGNORED), op_code());
 }
 
-void lookahead_processor::process_statement(context::shared_stmt_ptr statement) { process_statement(*statement); }
+void lookahead_processor::process_statement(context::shared_stmt_ptr statement)
+{
+    if (macro_nest_ == 0)
+        find_target(*statement);
 
-void lookahead_processor::process_statement(context::unique_stmt_ptr statement) { process_statement(*statement); }
+    auto resolved = statement->access_resolved();
+
+    if (!resolved)
+        return;
+
+    if (resolved->opcode_ref().value == macro_id)
+    {
+        process_MACRO();
+    }
+    else if (resolved->opcode_ref().value == mend_id)
+    {
+        process_MEND();
+    }
+    else if (macro_nest_ == 0 && resolved->opcode_ref().value == copy_id)
+    {
+        process_COPY(*resolved);
+    }
+}
 
 void lookahead_processor::end_processing()
 {
@@ -127,7 +147,8 @@ lookahead_processor::process_table_t lookahead_processor::create_table(context::
     return table;
 }
 
-void lookahead_processor::assign_EQU_attributes(context::id_index symbol_name, const resolved_statement& statement)
+void lookahead_processor::assign_EQU_attributes(
+    context::id_index symbol_name, const resolved_statement& statement)
 {
     // type attribute operand
     context::symbol_attributes::type_attr t_attr = context::symbol_attributes::undef_type;
@@ -191,7 +212,8 @@ void lookahead_processor::assign_EQU_attributes(context::id_index symbol_name, c
         location());
 }
 
-void lookahead_processor::assign_data_def_attributes(context::id_index symbol_name, const resolved_statement& statement)
+void lookahead_processor::assign_data_def_attributes(
+    context::id_index symbol_name, const resolved_statement& statement)
 {
     if (statement.operands_ref().value.empty())
         return;
@@ -235,7 +257,8 @@ void lookahead_processor::assign_section_attributes(context::id_index symbol_nam
         location());
 }
 
-void lookahead_processor::assign_machine_attributes(context::id_index symbol_name, const resolved_statement& statement)
+void lookahead_processor::assign_machine_attributes(
+    context::id_index symbol_name, const resolved_statement& statement)
 {
     auto mnem_tmp = context::instruction::mnemonic_codes.find(*statement.opcode_ref().value);
 
@@ -270,36 +293,12 @@ void lookahead_processor::assign_assembler_attributes(
     }
 }
 
-void lookahead_processor::process_statement(const context::hlasm_statement& statement)
-{
-    if (macro_nest_ == 0)
-        find_target(statement);
-
-    auto resolved = statement.access_resolved();
-
-    if (!resolved)
-        return;
-
-    if (resolved->opcode_ref().value == macro_id)
-    {
-        process_MACRO();
-    }
-    else if (resolved->opcode_ref().value == mend_id)
-    {
-        process_MEND();
-    }
-    else if (macro_nest_ == 0 && resolved->opcode_ref().value == copy_id)
-    {
-        process_COPY(*resolved);
-    }
-}
-
 void lookahead_processor::find_target(const context::hlasm_statement& statement)
 {
     switch (action)
     {
         case lookahead_action::SEQ:
-            find_seq(dynamic_cast<const semantics::core_statement&>(statement));
+            find_seq(dynamic_cast<const semantics::core_statement&>(statement).label_ref());
             break;
         case lookahead_action::ORD:
             find_ord(dynamic_cast<const resolved_statement&>(statement));
@@ -310,11 +309,11 @@ void lookahead_processor::find_target(const context::hlasm_statement& statement)
     }
 }
 
-void lookahead_processor::find_seq(const semantics::core_statement& statement)
+void lookahead_processor::find_seq(const semantics::label_si& label)
 {
-    if (statement.label_ref().type == semantics::label_si_type::SEQ)
+    if (label.type == semantics::label_si_type::SEQ)
     {
-        auto symbol = std::get<semantics::seq_sym>(statement.label_ref().value);
+        auto symbol = std::get<semantics::seq_sym>(label.value);
 
         branch_provider_.register_sequence_symbol(symbol.name, symbol.symbol_range);
 
