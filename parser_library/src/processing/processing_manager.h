@@ -61,6 +61,8 @@ private:
 
     processing_tracer* tracer_ = nullptr;
 
+    workspaces::library_data library_data_;
+
     bool attr_lookahead_active() const;
 
     statement_provider& find_provider();

@@ -15,6 +15,7 @@
 #include "processing_manager.h"
 
 #include <assert.h>
+#include <memory>
 
 #include "parsing/parser_impl.h"
 #include "statement_processors/copy_processor.h"
@@ -24,6 +25,7 @@
 #include "statement_processors/ordinary_processor.h"
 #include "statement_providers/copy_statement_provider.h"
 #include "statement_providers/macro_statement_provider.h"
+#include "expressions/mach_expr_term.h"
 
 namespace hlasm_plugin::parser_library::processing {
 
@@ -39,7 +41,7 @@ processing_manager::processing_manager(std::unique_ptr<opencode_provider> base_p
     , lib_provider_(lib_provider)
     , opencode_prov_(*base_provider)
     , tracer_(tracer)
-
+    , library_data_(data)
 {
     switch (data.proc_kind)
     {
@@ -98,6 +100,31 @@ void update_metrics(processing_kind proc_kind, statement_provider_kind prov_kind
 
 void processing_manager::start_processing(std::atomic<bool>* cancel)
 {
+    context::shared_stmt_ptr ptr;
+    semantics::label_si lab(range {});
+    range op_range { { 0, 6 }, { 0, 14 } };
+    semantics::instruction_si inst(range({ 0, 1 }, { 0, 5 }), hlasm_ctx_.ids().well_known.COPY);
+    auto ex = std::make_unique<expressions::mach_expr_symbol>(hlasm_ctx_.ids().add("COPYFILE"), op_range);
+    // semantics::operand_list
+
+
+    semantics::operand_ptr op =
+        std::make_unique<semantics::expr_assembler_operand>(std::move(ex), "COPYFILE", op_range);
+    semantics::operand_list op_list;
+    op_list.push_back(std::move(op));
+
+    semantics::operands_si ops(range(), std::move(op_list));
+
+    semantics::statement_si s(
+        range {}, std::move(lab), std::move(inst), std::move(ops), semantics::remarks_si(range(), {}));
+
+    auto statement_ptr = std::make_shared<semantics::statement_si>(std::move(s));
+    processing_status status { processing_format { processing_kind::ORDINARY, processing_form::ASM },
+        op_code { hlasm_ctx_.ids().well_known.COPY, context::instruction_type::ASM } };
+    resolved_statement_impl res_st(statement_ptr, status);
+    if (library_data_.proc_kind == processing_kind::ORDINARY)
+        procs_.back()->process_statement(std::make_shared<resolved_statement_impl>(std::move(res_st)));
+
     while (!procs_.empty())
     {
         if (cancel && *cancel)
